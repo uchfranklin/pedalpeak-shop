@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>PedalPeak Bicycles | Home</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <nav>
+      <div class="brand">🚲 PedalPeak Bicycles</div>
+      <div class="links">
+        <a href="index.html">Home</a>
+        <a href="cart.html">Cart (<span id="cartCount">0</span>)</a>
+        <a href="checkout.html">Checkout</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1 style="margin:0;">Find your next ride</h1>
+    <p class="muted" style="margin:0;">
+      Rider-owned shop with tuned-up bikes for commuting, trails, and weekend cruising.
+    </p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div>
+        <div class="pill">Store Information</div>
+        <p class="muted" style="margin-top:10px;">
+          <strong>Address:</strong> 28 Ridgeway Ave, Metuchen, NJ<br/>
+          <strong>Hours:</strong> Mon–Fri 10am–6pm, Sat 10am–4pm, Sun closed<br/>
+          <strong>Contact:</strong> (555) 014-BIKE • hello@pedalpeak.example
+        </p>
+      </div>
+      <div>
+        <div class="pill">Shipping & Policies</div>
+        <p class="muted" style="margin-top:10px;">
+          Flat $35 US shipping • In-store pickup free • 14-day returns (unused condition).
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid" id="productGrid" aria-label="Products"></section>
+
+  <footer>© <span id="year"></span> PedalPeak Bicycles • <a href="cart.html">Cart</a></footer>
+</main>
+
+<script src="app.js"></script>
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  const productPages = {
+    bike1: "bike1.html",
+    bike2: "bike2.html",
+    bike3: "bike3.html",
+    bike4: "bike4.html",
+    bike5: "bike5.html"
+  };
+
+  async function render() {
+    const products = await fetchProducts();
+    const grid = document.getElementById("productGrid");
+
+    grid.innerHTML = products.map(p => `
+      <article class="card">
+        <img class="product-img" src="${p.image}" alt="${p.name}">
+        <div class="content">
+          <div class="row">
+            <strong>${p.name}</strong>
+            <span class="price">${money(p.price)}</span>
+          </div>
+          <div class="muted">${p.blurb}</div>
+          <div class="btns">
+            <a class="btn" href="${productPages[p.id]}">View details</a>
+            <button class="btn" onclick="addToCart('${p.id}', 1)">Add to cart</button>
+            <a class="btn primary" href="cart.html">Go to cart</a>
+          </div>
+        </div>
+      </article>
+    `).join("");
+  }
+
+  render().catch(err => {
+    document.getElementById("productGrid").innerHTML =
+      `<div class="muted">Could not load products: ${err.message}</div>`;
+  });
+</script>
+</body>
+</html>

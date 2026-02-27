@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Cart | PedalPeak</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <nav>
+      <div class="brand">🚲 PedalPeak Bicycles</div>
+      <div class="links">
+        <a href="index.html">Home</a>
+        <a href="cart.html">Cart (<span id="cartCount">0</span>)</a>
+        <a href="checkout.html">Checkout</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1 style="margin:18px 0 0;">Your Cart</h1>
+  <p class="muted" style="margin:6px 0 0;">Update quantities, remove items, then proceed to checkout.</p>
+
+  <section class="card" style="margin-top:18px;">
+    <div class="content">
+      <div id="empty" class="muted" style="display:none;">
+        Your cart is empty. <a href="index.html" style="text-decoration:underline;">Shop bikes</a>.
+      </div>
+
+      <div id="cartWrap" style="display:none;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Unit price</th>
+              <th>Qty</th>
+              <th>Line total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+
+        <div class="hr"></div>
+
+        <div class="row">
+          <div class="muted">Subtotal</div>
+          <div class="price" id="subtotal">$0.00</div>
+        </div>
+
+        <div class="btns">
+          <a class="btn" href="index.html">Continue shopping</a>
+          <button class="btn" onclick="clearCart(); render();">Clear cart</button>
+          <a class="btn primary" href="checkout.html">Proceed to checkout</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="app.js"></script>
+<script>
+  async function render() {
+    const cart = loadCart();
+    const emptyEl = document.getElementById("empty");
+    const wrapEl = document.getElementById("cartWrap");
+    const rowsEl = document.getElementById("rows");
+    const subEl = document.getElementById("subtotal");
+
+    if (!cart.length) {
+      emptyEl.style.display = "block";
+      wrapEl.style.display = "none";
+      return;
+    }
+
+    const products = await fetchProducts();
+    const byId = Object.fromEntries(products.map(p => [p.id, p]));
+
+    let subtotal = 0;
+
+    rowsEl.innerHTML = cart.map(item => {
+      const p = byId[item.id];
+      if (!p) return "";
+      const line = p.price * item.qty;
+      subtotal += line;
+      return `
+        <tr>
+          <td>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <img src="${p.image}" alt="${p.name}" style="width:70px;height:50px;object-fit:cover;border-radius:10px;border:1px solid var(--border);">
+              <div>
+                <div><strong>${p.name}</strong></div>
+                <div class="muted" style="font-size:12px;">${p.blurb}</div>
+              </div>
+            </div>
+          </td>
+          <td>${money(p.price)}</td>
+          <td>
+            <input class="qty" type="number" min="1" value="${item.qty}"
+              onchange="setQty('${item.id}', this.value); render();">
+          </td>
+          <td><strong>${money(line)}</strong></td>
+          <td>
+            <button class="btn" onclick="removeFromCart('${item.id}'); render();">Remove</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    subEl.textContent = money(subtotal);
+    emptyEl.style.display = "none";
+    wrapEl.style.display = "block";
+  }
+
+  render().catch(err => console.error(err));
+</script>
+</body>
+</html>

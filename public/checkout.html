@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Checkout | PedalPeak</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <nav>
+      <div class="brand">🚲 PedalPeak Bicycles</div>
+      <div class="links">
+        <a href="index.html">Home</a>
+        <a href="cart.html">Cart (<span id="cartCount">0</span>)</a>
+        <a href="checkout.html">Checkout</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1 style="margin:18px 0 0;">Checkout</h1>
+  <p class="muted" style="margin:6px 0 0;">This checkout saves your order to SQLite (shop.db).</p>
+
+  <div class="form-grid">
+    <section class="card">
+      <div class="content">
+        <form id="form">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div>
+              <label>Full name</label>
+              <input id="name" required placeholder="e.g., Ankita Sharma">
+            </div>
+            <div>
+              <label>Email</label>
+              <input id="email" type="email" required placeholder="e.g., ankita@email.com">
+            </div>
+          </div>
+
+          <div style="margin-top:12px;">
+            <label>Shipping address</label>
+            <input id="address" required placeholder="Street, City, State">
+          </div>
+
+          <div style="margin-top:12px;">
+            <label>Shipping</label>
+            <select id="shipping">
+              <option value="35">Standard (3–6 days) — $35</option>
+              <option value="75">Express (1–2 days) — $75</option>
+              <option value="0">In-store pickup — $0</option>
+            </select>
+          </div>
+
+          <div class="btns" style="margin-top:12px;">
+            <button class="btn primary" type="submit">Place order</button>
+            <a class="btn" href="cart.html">Back to cart</a>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <aside class="card">
+      <div class="content">
+        <h2 style="margin:0;">Order Summary</h2>
+        <div id="summary" class="muted" style="margin-top:8px;">Loading…</div>
+        <div class="hr"></div>
+        <div class="row"><span class="muted">Subtotal</span><strong id="sub">$0.00</strong></div>
+        <div class="row"><span class="muted">Shipping</span><strong id="ship">$35.00</strong></div>
+        <div class="row"><span class="muted">Total</span><strong id="total">$0.00</strong></div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<script src="app.js"></script>
+<script>
+  let productsById = {};
+  let currentSubtotal = 0;
+
+  async function renderSummary() {
+    const cart = loadCart();
+    const summary = document.getElementById("summary");
+
+    if (!cart.length) {
+      summary.innerHTML = `Your cart is empty. <a href="index.html" style="text-decoration:underline;">Shop bikes</a>.`;
+      document.getElementById("form").querySelector("button[type=submit]").disabled = true;
+      return;
+    }
+
+    const products = await fetchProducts();
+    productsById = Object.fromEntries(products.map(p => [p.id, p]));
+
+    currentSubtotal = 0;
+    summary.innerHTML = cart.map(it => {
+      const p = productsById[it.id];
+      const line = p.price * it.qty;
+      currentSubtotal += line;
+      return `<div class="row"><span>${p.name} × ${it.qty}</span><strong>${money(line)}</strong></div>`;
+    }).join("");
+
+    const ship = Number(document.getElementById("shipping").value);
+    document.getElementById("sub").textContent = money(currentSubtotal);
+    document.getElementById("ship").textContent = money(ship);
+    document.getElementById("total").textContent = money(currentSubtotal + ship);
+  }
+
+  document.getElementById("shipping").addEventListener("change", renderSummary);
+
+  document.getElementById("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const cart = loadCart();
+    if (!cart.length) return;
+
+    const shipCost = Number(document.getElementById("shipping").value);
+    const shipMethod = shipCost === 0 ? "pickup" : (shipCost === 75 ? "express" : "standard");
+
+    const payload = {
+      customer: {
+        name: document.getElementById("name").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        address: document.getElementById("address").value.trim()
+      },
+      shipping: { method: shipMethod, cost: shipCost },
+      cart: cart
+    };
+
+    const res = await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert("Order failed: " + (err.error || res.statusText));
+      return;
+    }
+
+    const data = await res.json();
+    clearCart();
+    window.location.href = `confirmation.html?orderId=${encodeURIComponent(data.orderId)}`;
+  });
+
+  renderSummary().catch(console.error);
+</script>
+</body>
+</html>

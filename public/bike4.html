@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Bike | PedalPeak</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <nav>
+      <div class="brand">🚲 PedalPeak Bicycles</div>
+      <div class="links">
+        <a href="index.html">Home</a>
+        <a href="cart.html">Cart (<span id="cartCount">0</span>)</a>
+        <a href="checkout.html">Checkout</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card" style="margin-top:18px;">
+    <img class="product-img" id="img" alt="">
+    <div class="content">
+      <div class="row">
+        <h1 id="name" style="margin:0;font-size:22px;">—</h1>
+        <div class="price" id="price">—</div>
+      </div>
+      <div class="muted" id="blurb">—</div>
+      <div>
+        <strong>Key features</strong>
+        <ul class="muted" id="features" style="margin:8px 0 0 18px;"></ul>
+      </div>
+      <div class="btns">
+        <a class="btn" href="index.html">← Back</a>
+        <button class="btn" onclick="addToCart('bike2', 1)">Add to cart</button>
+        <a class="btn primary" href="cart.html">Go to cart</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="app.js"></script>
+<script>
+  (async () => {
+    const p = await fetchProduct("bike2");
+    document.title = p.name + " | PedalPeak";
+    document.getElementById("img").src = p.image;
+    document.getElementById("img").alt = p.name;
+    document.getElementById("name").textContent = p.name;
+    document.getElementById("price").textContent = money(p.price);
+    document.getElementById("blurb").textContent = p.blurb;
+    document.getElementById("features").innerHTML = p.features.map(f => `<li>${f}</li>`).join("");
+  })().catch(console.error);
+</script>
+</body>
+</html>

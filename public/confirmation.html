@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Order Confirmed | PedalPeak</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <nav>
+      <div class="brand">🚲 PedalPeak Bicycles</div>
+      <div class="links">
+        <a href="index.html">Home</a>
+        <a href="cart.html">Cart (<span id="cartCount">0</span>)</a>
+        <a href="checkout.html">Checkout</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card" style="margin-top:18px;">
+    <div class="content">
+      <div class="row">
+        <h1 style="margin:0;">✅ Purchase confirmed</h1>
+        <div class="muted" id="orderMeta">—</div>
+      </div>
+
+      <div class="hr"></div>
+      <div id="details" class="muted">Loading order…</div>
+
+      <div class="btns" style="margin-top:12px;">
+        <a class="btn primary" href="index.html">Shop more bikes</a>
+        <a class="btn" href="checkout.html">Checkout</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="app.js"></script>
+<script>
+  (async () => {
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get("orderId");
+    if (!orderId) {
+      document.getElementById("details").textContent = "Missing orderId.";
+      return;
+    }
+
+    const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}`);
+    if (!res.ok) {
+      document.getElementById("details").textContent = "Order not found.";
+      return;
+    }
+
+    const { order, items } = await res.json();
+    document.title = `Order #${order.id} | PedalPeak`;
+    document.getElementById("orderMeta").textContent = `Order #${order.id}`;
+
+    const itemLines = items.map(it =>
+      `<div class="row"><span>${it.product_name} × ${it.quantity}</span><strong>${money(it.line_total)}</strong></div>`
+    ).join("");
+
+    document.getElementById("details").innerHTML = `
+      <div class="row"><span>Customer</span><strong>${order.customer_name}</strong></div>
+      <div class="row"><span>Email</span><strong>${order.email}</strong></div>
+      <div class="row"><span>Address</span><strong>${order.address}</strong></div>
+
+      <div class="hr"></div>
+      <strong>Items</strong>
+      <div style="margin-top:8px;">${itemLines}</div>
+
+      <div class="hr"></div>
+      <div class="row"><span>Subtotal</span><strong>${money(order.subtotal)}</strong></div>
+      <div class="row"><span>Shipping</span><strong>${money(order.shipping_cost)} (${order.shipping_method})</strong></div>
+      <div class="row"><span>Total</span><strong>${money(order.total)}</strong></div>
+
+      <div class="hr"></div>
+      <div class="muted">Saved in SQLite: <code>shop.db</code></div>
+    `;
+  })().catch(err => {
+    document.getElementById("details").textContent = "Error loading order: " + err.message;
+  });
+</script>
+</body>
+</html>
